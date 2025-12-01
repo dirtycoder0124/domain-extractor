@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Domain Extractor</title>
     <style>
         body {
@@ -15,35 +15,20 @@
             align-items: center;
         }
 
-        h1 {
-            color: #333;
-        }
+        h1 { margin-bottom: 15px; }
 
         textarea {
-            width: 90%;
+            width: 95%;
             height: 200px;
             padding: 10px;
             border: 1px solid #ccc;
             font-size: 16px;
             border-radius: 5px;
             resize: vertical;
-        }
-
-        #output, #filteredOutput {
-            width: 90%;
-            margin-top: 15px;
-            padding: 10px;
-            background: #fff;
-            border: 1px solid #ccc;
-            min-height: 150px;
-            border-radius: 5px;
-            white-space: pre-wrap;
-            font-size: 16px;
-            cursor: pointer;
+            margin-bottom: 15px;
         }
 
         button {
-            margin-top: 15px;
             padding: 10px 20px;
             font-size: 16px;
             background: #007bff;
@@ -51,164 +36,95 @@
             color: white;
             border-radius: 5px;
             cursor: pointer;
+            margin-bottom: 20px;
+        }
+        button:hover { background: #0056b3; }
+
+        .container {
+            display: flex;
+            width: 95%;
+            gap: 15px;
         }
 
-        button[disabled] {
-            opacity: 0.6;
-            cursor: not-allowed;
+        .box {
+            width: 50%;
         }
 
-        button:hover:not([disabled]) {
-            background: #0056b3;
+        .box-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .output {
+            width: 100%;
+            min-height: 300px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background: white;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            cursor: pointer;
+            overflow-y: auto;
         }
 
         .note {
+            margin-top: 10px;
             font-size: 14px;
             color: gray;
-            margin-top: 10px;
-        }
-
-        .title-small {
-            margin-top: 10px;
-            font-weight: bold;
-            color: #444;
-        }
-
-        #tldStatus {
-            margin-left: 10px;
-            font-size: 13px;
-            color: #666;
         }
     </style>
 </head>
 <body>
 
-    <h1>Domain Extractor</h1>
+<h1>Domain Extractor</h1>
 
-    <textarea id="input" placeholder="Paste data here..."></textarea>
-    
-    <div style="display:flex; align-items:center;">
-        <button id="extractBtn" onclick="extractDomains()">Extract Domains</button>
-        <span id="tldStatus">Loading TLDs...</span>
+<textarea id="input" placeholder="Paste data here..."></textarea>
+
+<button onclick="extractDomains()">Extract Domains</button>
+
+<div class="container">
+    <div class="box">
+        <div class="box-title">All Domains</div>
+        <div id="output-all" class="output" onclick="copyText('output-all')"></div>
     </div>
 
-    <div class="title-small">🔹 All Detected Domains</div>
-    <div id="output" onclick="copyOutput('output')"></div>
+    <div class="box">
+        <div class="box-title">Valid TLD Domains</div>
+        <div id="output-valid" class="output" onclick="copyText('output-valid')"></div>
+    </div>
+</div>
 
-    <div class="title-small">🔹 Domains with Valid TLD (Verified)</div>
-    <div id="filteredOutput" onclick="copyOutput('filteredOutput')"></div>
+<p class="note">Click any section to copy its content.</p>
 
-    <p class="note">Click result to copy.</p>
+<script>
+    let validTLDs = new Set();
 
-    <script>
-        // TLD source (raw file) - Daniel Miessler SecLists
-        const TLD_URL = "https://raw.githubusercontent.com/danielmiessler/SecLists/refs/heads/master/Discovery/DNS/tlds.txt";
+    fetch("https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/tlds.txt")
+        .then(r => r.text())
+        .then(data => {
+            data.split(/\r?\n/).forEach(tld => validTLDs.add(tld.trim().toLowerCase()));
+        });
 
-        // Data structures
-        let validTLDs = new Set();
-        let tldsLoaded = false;
-        let tldsLoadError = false;
+    function extractDomains() {
+        const text = document.getElementById("input").value;
 
-        const tldStatusEl = document.getElementById("tldStatus");
-        const extractBtn = document.getElementById("extractBtn");
+        const regex = /\b[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+\b/g;
+        const domains = [...new Set((text.match(regex) || []).map(d => d.toLowerCase()))];
 
-        // Load TLDs once, return a Promise so callers can await
-        async function loadTLDs() {
-            if (tldsLoaded) return;
-            try {
-                extractBtn.disabled = true;
-                tldStatusEl.innerText = "Loading TLDs...";
-                const resp = await fetch(TLD_URL);
-                if (!resp.ok) throw new Error("TLD fetch failed: " + resp.status);
-                const txt = await resp.text();
-                txt.split(/\r?\n/).forEach(line => {
-                    const t = line.trim().toLowerCase();
-                    // include entries composed of letters, numbers, hyphen and dots (some lists contain dot separators)
-                    if (t && /^[a-z0-9.-]+$/.test(t)) {
-                        validTLDs.add(t);
-                    }
-                });
-                tldsLoaded = true;
-                tldStatusEl.innerText = `TLDs loaded (${validTLDs.size})`;
-            } catch (err) {
-                console.error("Error loading TLD list:", err);
-                tldsLoadError = true;
-                tldStatusEl.innerText = "TLDs failed to load (will attempt on extract).";
-            } finally {
-                extractBtn.disabled = false;
-            }
-        }
+        document.getElementById("output-all").innerText = domains.join("\n") || "No domains found.";
 
-        // Start loading immediately (in background)
-        loadTLDs();
+        const valid = domains.filter(domain => {
+            let lastPart = domain.split(".").pop();
+            return validTLDs.has(lastPart);
+        });
 
-        // Utility: check if domain has a valid TLD by checking suffixes (last 1..4 segments)
-        function domainHasValidTLD(domain) {
-            if (!tldsLoaded) return false; // caller should await loadTLDs if needed
-            const parts = domain.toLowerCase().split(".");
-            // don't treat single-segment as domain
-            if (parts.length < 2) return false;
-            // Check suffixes: com, co.uk, example.co.uk, etc.
-            const maxSegments = Math.min(4, parts.length - 1); // don't include the whole domain
-            for (let i = 1; i <= maxSegments; i++) {
-                const suffix = parts.slice(-i).join(".");
-                if (validTLDs.has(suffix)) return true;
-            }
-            return false;
-        }
+        document.getElementById("output-valid").innerText = valid.join("\n") || "No valid TLD domains found.";
+    }
 
-        // Extract domains (keeps your original regex behavior)
-        async function extractDomains() {
-            // If TLD list not loaded and not errored, wait for it to load so filtered output works
-            if (!tldsLoaded && !tldsLoadError) {
-                tldStatusEl.innerText = "Loading TLDs (please wait)...";
-                extractBtn.disabled = true;
-                try {
-                    await loadTLDs();
-                } catch (e) {
-                    console.warn("Proceeding without TLDs due to load error.");
-                } finally {
-                    extractBtn.disabled = false;
-                }
-            }
+    function copyText(id) {
+        navigator.clipboard.writeText(document.getElementById(id).innerText);
+    }
+</script>
 
-            const text = document.getElementById("input").value;
-
-            // Original extraction regex (keeps exactly the same behavior as before)
-            const regex = /\b(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9.-]+\.[a-z]{2,})(?:\/[^\s]*)?/gi;
-            let match, domains = [];
-
-            while ((match = regex.exec(text)) !== null) {
-                domains.push(match[1].toLowerCase());
-            }
-
-            // fallback more permissive match for things without obvious TLDs (if needed)
-            // (we keep the original as primary; do not change unless you want)
-            domains = [...new Set(domains)]; // remove duplicates
-
-            // Show all extracted domains (raw)
-            document.getElementById("output").innerText = domains.join("\n") || "No domains found.";
-
-            // Filter by TLDs: robust multi-part check
-            let filtered = [];
-            if (tldsLoaded) {
-                filtered = domains.filter(d => domainHasValidTLD(d));
-            } else {
-                // if TLDs failed to load, attempt a best-effort single-segment check (last segment)
-                filtered = domains.filter(d => {
-                    const last = d.split(".").pop().toLowerCase();
-                    return /^[a-z]{2,}$/.test(last);
-                });
-                tldStatusEl.innerText = "TLD list not available — using heuristic.";
-            }
-
-            document.getElementById("filteredOutput").innerText = filtered.join("\n") || "No valid TLD domains found.";
-        }
-
-        function copyOutput(id) {
-            const text = document.getElementById(id).innerText;
-            if (text.trim()) navigator.clipboard.writeText(text);
-        }
-    </script>
 </body>
 </html>
