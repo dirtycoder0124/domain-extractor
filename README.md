@@ -1,2 +1,2 @@
 # domain-extractor
-Paste text data and it will extract all domains and subdomains from.
+Paste data and it will extract all domains and subdomains from.
