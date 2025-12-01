@@ -69,6 +69,14 @@
             color: #000;
             font-weight: bold;
         }
+
+        #copied {
+            margin-top: 5px;
+            font-size: 14px;
+            color: green;
+            opacity: 0;
+            transition: opacity .5s ease-out;
+        }
     </style>
 </head>
 <body>
@@ -83,6 +91,8 @@
 
     <div id="output" onclick="copyOutput()"></div>
 
+    <div id="copied">Copied!</div>
+
     <p class="note">Click result to copy.</p>
 
     <script>
@@ -96,7 +106,7 @@
                 domains.push(match[1].toLowerCase());
             }
 
-            domains = [...new Set(domains)]; // remove duplicates
+            domains = [...new Set(domains)];
 
             document.getElementById("output").innerText = domains.join("\n") || "No domains found.";
             document.getElementById("count").innerText = domains.length ? `Total domains: ${domains.length}` : ``;
@@ -105,8 +115,15 @@
         function copyOutput() {
             const text = document.getElementById("output").innerText;
             if (!text) return;
+
             navigator.clipboard.writeText(text);
-            //alert("Copied!");
+
+            let msg = document.getElementById("copied");
+            msg.style.opacity = 1;
+            
+            setTimeout(() => {
+                msg.style.opacity = 0;
+            }, 1500);
         }
     </script>
 </body>
