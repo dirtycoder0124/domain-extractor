@@ -15,20 +15,35 @@
             align-items: center;
         }
 
-        h1 { margin-bottom: 15px; }
+        h1 {
+            color: #333;
+        }
 
         textarea {
-            width: 95%;
+            width: 90%;
             height: 200px;
             padding: 10px;
             border: 1px solid #ccc;
             font-size: 16px;
             border-radius: 5px;
             resize: vertical;
-            margin-bottom: 15px;
+        }
+
+        #output {
+            width: 90%;
+            margin-top: 15px;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ccc;
+            min-height: 150px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-size: 16px;
+            cursor: pointer;
         }
 
         button {
+            margin-top: 15px;
             padding: 10px 20px;
             font-size: 16px;
             background: #007bff;
@@ -36,95 +51,52 @@
             color: white;
             border-radius: 5px;
             cursor: pointer;
-            margin-bottom: 20px;
-        }
-        button:hover { background: #0056b3; }
-
-        .container {
-            display: flex;
-            width: 95%;
-            gap: 15px;
         }
 
-        .box {
-            width: 50%;
-        }
-
-        .box-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .output {
-            width: 100%;
-            min-height: 300px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            background: white;
-            border-radius: 5px;
-            white-space: pre-wrap;
-            cursor: pointer;
-            overflow-y: auto;
+        button:hover {
+            background: #0056b3;
         }
 
         .note {
-            margin-top: 10px;
             font-size: 14px;
             color: gray;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
 
-<h1>Domain Extractor</h1>
+    <h1>Domain Extractor</h1>
 
-<textarea id="input" placeholder="Paste data here..."></textarea>
+    <textarea id="input" placeholder="Paste data here..."></textarea>
+    
+    <button onclick="extractDomains()">Extract Domains</button>
 
-<button onclick="extractDomains()">Extract Domains</button>
+    <div id="output" onclick="copyOutput()"></div>
 
-<div class="container">
-    <div class="box">
-        <div class="box-title">All Domains</div>
-        <div id="output-all" class="output" onclick="copyText('output-all')"></div>
-    </div>
+    <p class="note">Click result to copy.</p>
 
-    <div class="box">
-        <div class="box-title">Valid TLD Domains</div>
-        <div id="output-valid" class="output" onclick="copyText('output-valid')"></div>
-    </div>
-</div>
+    <script>
+        function extractDomains() {
+            const text = document.getElementById("input").value;
 
-<p class="note">Click any section to copy its content.</p>
+            const regex = /\b(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9.-]+\.[a-z]{2,})(?:\/[^\s]*)?/gi;
+            let match, domains = [];
 
-<script>
-    let validTLDs = new Set();
+            while ((match = regex.exec(text)) !== null) {
+                domains.push(match[1].toLowerCase());
+            }
 
-    fetch("https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/tlds.txt")
-        .then(r => r.text())
-        .then(data => {
-            data.split(/\r?\n/).forEach(tld => validTLDs.add(tld.trim().toLowerCase()));
-        });
+            domains = [...new Set(domains)]; // remove duplicates
 
-    function extractDomains() {
-        const text = document.getElementById("input").value;
+            document.getElementById("output").innerText = domains.join("\n") || "No domains found.";
+        }
 
-        const regex = /\b[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+\b/g;
-        const domains = [...new Set((text.match(regex) || []).map(d => d.toLowerCase()))];
-
-        document.getElementById("output-all").innerText = domains.join("\n") || "No domains found.";
-
-        const valid = domains.filter(domain => {
-            let lastPart = domain.split(".").pop();
-            return validTLDs.has(lastPart);
-        });
-
-        document.getElementById("output-valid").innerText = valid.join("\n") || "No valid TLD domains found.";
-    }
-
-    function copyText(id) {
-        navigator.clipboard.writeText(document.getElementById(id).innerText);
-    }
-</script>
-
+        function copyOutput() {
+            const text = document.getElementById("output").innerText;
+            navigator.clipboard.writeText(text);
+            alert("Copied!");
+        }
+    </script>
 </body>
 </html>
