@@ -1,102 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Domain Extractor</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f6fa;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Domain Extractor</title>
 
-        h1 {
-            color: #333;
-        }
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #0d1117;
+        color: #e6edf3;
+        padding: 40px;
+        text-align: center;
+    }
 
-        textarea {
-            width: 90%;
-            height: 200px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-            border-radius: 5px;
-            resize: vertical;
-        }
+    h2 { color: #00b4d8; }
 
-        #output {
-            width: 90%;
-            margin-top: 15px;
-            padding: 10px;
-            background: #fff;
-            border: 1px solid #ccc;
-            min-height: 150px;
-            border-radius: 5px;
-            white-space: pre-wrap;
-            font-size: 16px;
-            cursor: pointer;
-        }
+    textarea {
+        width: 90%;
+        height: 200px;
+        background: #161b22;
+        color: #e6edf3;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        padding: 10px;
+        font-size: 14px;
+    }
 
-        button {
-            margin-top: 15px;
-            padding: 10px 20px;
-            font-size: 16px;
-            background: #007bff;
-            border: none;
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-        }
+    button {
+        margin-top: 20px;
+        padding: 10px 20px;
+        background-color: #00b4d8;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        color: #0d1117;
+        font-weight: bold;
+        font-size: 15px;
+    }
 
-        button:hover {
-            background: #0056b3;
-        }
+    button:hover {
+        background-color: #0096c7;
+    }
 
-        .note {
-            font-size: 14px;
-            color: gray;
-            margin-top: 10px;
-        }
-    </style>
+    #output {
+        margin-top: 20px;
+        width: 90%;
+        min-height: 200px;
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        padding: 10px;
+        text-align: left;
+        font-size: 14px;
+        white-space: pre-wrap;
+    }
+</style>
 </head>
+
 <body>
 
-    <h1>Domain Extractor</h1>
+<h2>Domain Name Extractor</h2>
 
-    <textarea id="input" placeholder="Paste data here..."></textarea>
-    
-    <button onclick="extractDomains()">Extract Domains</button>
+<textarea id="input" placeholder="Paste your data here..."></textarea>
+<br>
+<button onclick="extractDomains()">Extract Domains</button>
 
-    <div id="output" onclick="copyOutput()"></div>
+<div id="output"></div>
 
-    <p class="note">Click result to copy.</p>
+<script>
+function extractDomains() {
+    let text = document.getElementById("input").value;
 
-    <script>
-        function extractDomains() {
-            const text = document.getElementById("input").value;
+    // Regex: Domain extractor
+    let regex = /\b((?:[a-zA-Z0-9-]+\.)+(?:[a-zA-Z]{2,}))\b/g;
+    let matches = text.match(regex) || [];
 
-            const regex = /\b(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9.-]+\.[a-z]{2,})(?:\/[^\s]*)?/gi;
-            let match, domains = [];
+    // Remove duplicates & sort
+    let unique = [...new Set(matches)].sort();
 
-            while ((match = regex.exec(text)) !== null) {
-                domains.push(match[1].toLowerCase());
-            }
+    document.getElementById("output").textContent =
+        unique.length ? unique.join("\n") : "No domains found!";
+}
+</script>
 
-            domains = [...new Set(domains)]; // remove duplicates
-
-            document.getElementById("output").innerText = domains.join("\n") || "No domains found.";
-        }
-
-        function copyOutput() {
-            const text = document.getElementById("output").innerText;
-            navigator.clipboard.writeText(text);
-            alert("Copied!");
-        }
-    </script>
 </body>
 </html>
