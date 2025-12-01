@@ -62,6 +62,13 @@
             color: gray;
             margin-top: 10px;
         }
+
+        #count {
+            font-size: 16px;
+            margin-top: 10px;
+            color: #000;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -72,6 +79,8 @@
     
     <button onclick="extractDomains()">Extract Domains</button>
 
+    <div id="count"></div>
+
     <div id="output" onclick="copyOutput()"></div>
 
     <p class="note">Click result to copy.</p>
@@ -80,7 +89,7 @@
         function extractDomains() {
             const text = document.getElementById("input").value;
 
-            const regex = /\b(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9.-]+\.[a-z]{2,})(?:\/[^\s]*)?/gi;
+            const regex = /\b(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9.-]+\.[a-zA-Z0-9-]{2,})(?:\/[^\s]*)?/gi;
             let match, domains = [];
 
             while ((match = regex.exec(text)) !== null) {
@@ -90,12 +99,14 @@
             domains = [...new Set(domains)]; // remove duplicates
 
             document.getElementById("output").innerText = domains.join("\n") || "No domains found.";
+            document.getElementById("count").innerText = domains.length ? `Total domains: ${domains.length}` : ``;
         }
 
         function copyOutput() {
             const text = document.getElementById("output").innerText;
+            if (!text) return;
             navigator.clipboard.writeText(text);
-           // alert("Copied!");
+            //alert("Copied!");
         }
     </script>
 </body>
